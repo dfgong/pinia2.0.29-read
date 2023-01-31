@@ -6,6 +6,7 @@ import {
   RouteLocationNormalized,
   RouteLocationNormalizedLoaded,
 } from 'vue-router'
+import {useUserStore} from "./stores/user";
 
 const pinia = createPinia()
 
@@ -61,3 +62,5 @@ if (import.meta.hot) {
 }
 
 createApp(App).use(router).use(pinia).mount('#app')
+debugger
+useUserStore()

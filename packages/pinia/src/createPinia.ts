@@ -23,9 +23,12 @@ export function createPinia(): Pinia {
     install(app: App) {
       // this allows calling useStore() outside of a component setup after
       // installing pinia's plugin
+      // dfgong 初始化activePinia，在inject(piniaSymbol, null)失败时使用
       setActivePinia(pinia)
       if (!isVue2) {
         pinia._a = app
+        // dfgong 创建时将pinia provide到piniaSymbol
+        // dfgong vue中多次use调用时，会发出警告，提示已经provide了 => todo provide调用时对于Symbol的相等判断做了修改,看vue的时候关注下
         app.provide(piniaSymbol, pinia)
         app.config.globalProperties.$pinia = pinia
         /* istanbul ignore else */

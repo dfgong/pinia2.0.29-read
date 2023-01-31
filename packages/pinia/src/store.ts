@@ -1,3 +1,4 @@
+// dfgong 强依赖vue的，所以是vue专用的，不能单独使用
 import {
   watch,
   computed,
@@ -145,6 +146,7 @@ function createOptionsStore<
 
   let store: Store<Id, S, G, A>
 
+  // dfgong 将state/getter转换为响应式变量
   function setup() {
     if (!initialState && (!__DEV__ || !hot)) {
       /* istanbul ignore if */
@@ -193,6 +195,7 @@ function createOptionsStore<
     )
   }
 
+  // dfgong 将options转换为setup的方式统一创建
   store = createSetupStore(id, setup, options, pinia, hot, true)
 
   store.$reset = function $reset() {
@@ -454,6 +457,7 @@ function createSetupStore<
     partialStore._r = false
   }
 
+  // dfgong store用reactive包装，这样可以自动解包任何它所包含的 Ref => todo vue中reactive的实现
   const store: Store<Id, S, G, A> = reactive(
     __DEV__ || USE_DEVTOOLS
       ? assign(
@@ -689,20 +693,24 @@ function createSetupStore<
   }
 
   // apply all plugins
+  // dfgong[看前问题] pinia的插件是干什么用的，能做什么？插件函数调用时的参数是什么?
+  // dfgong 插件函数在每个store的第一次defineStore时调用，主要就是将插件函数返回的对象assign到store中，实现功能的拓展
   pinia._p.forEach((extender) => {
     /* istanbul ignore else */
     if (USE_DEVTOOLS) {
       const extensions = scope.run(() =>
+        // dfgong 插件函数调用的的参数
         extender({
-          store,
+          store, // dfgong 插件函数中可以对store进行拓展
           app: pinia._a,
           pinia,
           options: optionsForPlugin,
         })
       )!
       Object.keys(extensions || {}).forEach((key) =>
-        store._customProperties.add(key)
+        store._customProperties.add(key) // dfgong _customProperties中的属性可以使 devtools 能追踪到
       )
+      // dfgong 插件函数返回的对象assign到store中
       assign(store, extensions)
     } else {
       assign(
@@ -879,7 +887,6 @@ export function defineStore(
     options = idOrOptions
     id = idOrOptions.id
   }
-
   function useStore(pinia?: Pinia | null, hot?: StoreGeneric): StoreGeneric {
     const currentInstance = getCurrentInstance()
     pinia =
@@ -888,7 +895,6 @@ export function defineStore(
       (__TEST__ && activePinia && activePinia._testing ? null : pinia) ||
       (currentInstance && inject(piniaSymbol, null))
     if (pinia) setActivePinia(pinia)
-
     if (__DEV__ && !activePinia) {
       throw new Error(
         `[🍍]: getActivePinia was called with no active Pinia. Did you forget to install pinia?\n` +
@@ -898,11 +904,14 @@ export function defineStore(
       )
     }
 
+    // dfgong[看前问题] 为什么在main.ts中use(pinia)后就能调用useStore?
+    // dfgong 在组件外使用时，currentInstance为null，pinia不存在，但activePinia在pinia在作为vue插件注册时就有了初始化的值
     pinia = activePinia!
 
     if (!pinia._s.has(id)) {
       // creating the store registers it in `pinia._s`
       if (isSetupStore) {
+        // dfgong SetupStore方式的数据本身就是响应式的
         createSetupStore(id, setup, options, pinia)
       } else {
         createOptionsStore(id, options as any, pinia)
@@ -949,6 +958,8 @@ export function defineStore(
   }
 
   useStore.$id = id
-
+  // dfgong[看前问题] Pinia中的store，每次使用都需要调用返回，怎么实现多次调用返回的同一个对象
+  // dfgong 返回的函数，使用时每次都要调用，为什么这么设计：
+  // dfgong 统一逻辑，已经存在则直接返回，没有就创建并储存，都储存在app.provide(piniaSymbol, pinia)的pinia中
   return useStore
 }

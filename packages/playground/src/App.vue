@@ -1,6 +1,6 @@
 <template>
   <header>
-    <h1>🍍 Pinia playground</h1>
+    <h1 @click="test">🍍 Pinia playground</h1>
     <nav>
       <template v-for="(page, i) in pages" :key="page.name">
         <router-link :to="page" v-slot="{ route }">{{
@@ -43,6 +43,9 @@ const sourceCodeLink = computed(() => {
     return `https://github.com/vuejs/pinia/blob/v2/packages/playground/src/`
   }
 })
+
+const test = () => {
+}
 </script>
 
 <style>
